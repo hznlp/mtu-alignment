@@ -1,0 +1,74 @@
+\documentclass[11pt, oneside]{article}   	% use "amsart" instead of "article" for AMSLaTeX format
+\usepackage{geometry}                		% See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}                   		% ... or a4paper or a5paper or ... 
+%\geometry{landscape}                		% Activate for for rotated page geometry
+%\usepackage[parfill]{parskip}    		% Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}				% Use pdf, png, jpg, or eps§ with pdflatex; use eps in DVI mode
+								% TeX will automatically convert eps --> pdf in pdflatex		
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{cite}
+\title{Alignment with Minimum Translation Units}
+%\author{The Author}
+%\date{}							% Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+\section{Task definition}
+A sentence is an ordered set $S=\{w_i | i \in [1,n]\} $, where $w_i$ is the i-th word of the sentence defined as a pair $(word \, content, i)$. The order is defined by $w_i \leqslant w_j \, if \, i \leqslant j $.  A phrase $p=\{w_i | i \in [k,l] \} $ is a sub ordered set of S. Given a source sentence $S$ and a target sentence $T$, we want to find the set of phrase pairs $seg(S,T)=\{(ps,pt) \, | \, \bigcup ps = S, \bigcap ps = \emptyset,  \bigcup pt = T, \bigcap pt = \emptyset \}$ which optimizes some function $f: \{seg(S,T)\} \rightarrow \mathbf{R}$.  
+
+\section{Notation related to phrase}
+
+\begin{itemize}
+\item Word content: In the above definition, $w_i$ not only contains the word content but also the position information. For convenience, we denote $c(w_i)$ as the content of the word $w_i$. For example, in sentence ``tweet a tweet'' where the word ``tweet'' appears in positions $1$ and $3$, we say $w_1 < w_3$ and $c(w_1) = c(w_3)$.
+\item Phrase content: Given a phrase, $p=\{w_i | i \in [k,l] \}$, we define its content by ignoring its absolute position in sentence,  $c(p)=\{ w'_i | i \in [1,l-k+1], c(w'_i)=c(w_{i+k-1}), w_{i+k-1} \in p \}$.
+
+\item Phrase boundary: Given a phrase, $p=\{w_i | i \in [k,l] \}$, we define its left boundary position as $left(p)=k$, right boundary position as $right(p)=l$. 
+
+\item Phrase pair: We define phrase pair $pp=(ps,pt)$, source phrase of phrase pair $src(pp)=ps$, target phrase of phrase pair $tgt(pp)=pt$, content of phrase pair $c(pp)=(c(ps),c(pt))$
+
+\item Segmentation of phrases: $seg(p)=\{p'| \bigcup p' = p, \bigcap p' = \emptyset\}$
+
+\item Segmentation of phrase pair: $seg(ps,pt)=\{(ps',pt')| \bigcup ps' = ps, \bigcap ps' = \emptyset \bigcup pt' = pt, \bigcap pt' = \emptyset\}$
+\end{itemize}
+\section{Objective function $f$} 
+We can define various objective function f over $seg(S,T)$. Here we give some examples.
+\begin{itemize}
+
+\item Model 1:
+\begin{equation} \label{eq:obj1}
+f(seg(S,T))=\prod_{pp \in seg(S,T)}p(c(pp))
+\end{equation}
+
+\item Model 2:
+\begin{equation} \label{eq:obj2}
+f(seg(S,T))=\prod_{pp_i \in seg(S,T)}p(c(pp_i) | c(pp_{i-1}), ... c(pp_1))
+\end{equation}
+where $left(src(pp_i))- right(src(pp_{i-1}))=1$
+
+\item Model 3:
+\begin{equation} \label{eq:obj3}
+f(seg(S,T))=\prod_{pp_i \in seg(S,T)} p(c(pp_i) | c(pp_{i-1}), ... c(pp_1) p(d(i) | d(i-1) ... d(1)) )
+\end{equation}
+where $left(src(pp_i))- right(src(pp_{i-1}))=1$, \quad $d(i)=left(tgt(pp_i))- right(tgt(pp_{i-1}))$
+\end{itemize}
+\section{Search space of Model 1}
+Given a source sentence $S=\{s_i | i \in [1,n]\}$, then we have number of phrases $|\{ p | p \subseteq S \}|=\frac{n^2+n}{2}$ and number of phrase segmentations $|\{seg(S)\}|=\sum\limits_{i=1}^n {n \choose i} = 2^n$. 
+
+Given a source sentence $S=\{s_i | i \in [1,n]\}$ and a target sentence $T=\{t_i | i \in [1,m]\}$.  Let $n \leqslant m $, we have $|\{seg(S,T)\}|= \sum \limits_{i=1}^n {n \choose i}{m \choose i}i!  > \sum \limits_{i=1}^n {n \choose i}{n \choose i} = {2n \choose n} \sim \frac{4^n}{n^{1/2} \sqrt{\pi}}$.
+
+Search for the best segmentation is NP-Hard \cite{denero-acl-08}.
+
+%If the phrase segmentation of the source sentence is given, then this problem can be reduced to the longest path problem which is NP-complete.  So the original problem is NP-hard. 
+
+\section{Search space pruning}
+It's impractical to do search in the original space of Model 1. Below are some heuristic ways to do pruning.
+\begin{itemize}
+\item filter out phrases appearing less than 5 times in the corpus, but keep all unigrams \cite{marcu-wong-02}
+\item filter out phrases which is not compatible with word alignments. \cite{denero-06-wmt}
+\end{itemize}
+
+\bibliography{mybib}{}
+\bibliographystyle{plain}
+
+\end{document}  
